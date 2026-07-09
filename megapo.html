@@ -51,11 +51,23 @@ tr:last-child td { border-bottom:none; } .r { text-align:right; } th.r { text-al
 .legend { display:flex; gap:16px; font-size:12px; color:var(--muted); margin-top:8px; flex-wrap:wrap; }
 .lg { display:inline-flex; align-items:center; gap:5px; } .sw { width:10px; height:10px; border-radius:3px; }
 .note { background:#fffbeb; border:1px solid #fde68a; color:#92400e; font-size:12.5px; padding:10px 14px; border-radius:10px; margin-bottom:22px; }
+.ebtn { font-family:inherit; font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:99px; border:1px solid var(--border2); background:var(--surface); color:var(--text); cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.12); }
+.ebtn.on { background:var(--main); color:#fff; border-color:var(--main); }
+#editbar { position:fixed; top:14px; right:14px; z-index:99; display:flex; gap:8px; }
+.edit-hint { display:none; background:#f5f3ff; border:1px solid #ddd6fe; color:var(--main); font-size:12.5px; padding:10px 14px; border-radius:10px; margin-bottom:16px; }
+body.editable-on .edit-hint { display:block; }
+body.editable-on .ins h3, body.editable-on .ins p, body.editable-on .dir h3, body.editable-on .dir li { outline:1px dashed var(--main); outline-offset:3px; border-radius:4px; }
+[contenteditable="true"]:focus { background:#faf5ff; }
 .footer { text-align:center; color:var(--muted); font-size:12px; padding:10px 0 30px; }
 </style>
 </head>
 <body>
 <div class="wrap">
+<div id="editbar">
+  <button id="editToggle" class="ebtn">✏️ 코멘트 편집</button>
+  <button id="editReset" class="ebtn" style="display:none">↺ 초기화</button>
+</div>
+<div class="edit-hint">✏️ 편집 모드입니다. ②핵심 인사이트·③개선 방향 카드의 제목·본문을 클릭해 수정하세요. 수정 내용은 이 브라우저에 자동 저장됩니다. (수치·표는 편집되지 않습니다)</div>
 <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
   <div>
     <h1>싱글원 × wetiptoe &nbsp;<span style="font-weight:500;color:var(--muted);font-size:15px">메가포(MEGAPO) 광고 성과 대시보드</span></h1>
@@ -155,6 +167,30 @@ function showTab(i,el) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
 }
+<script>
+(function(){
+  var KEY='so_dash_edits::'+location.pathname;
+  var els=[].slice.call(document.querySelectorAll('.ins h3,.ins p,.dir h3,.dir li'));
+  els.forEach(function(el,i){el.setAttribute('data-eid','e'+i);});
+  var saved={};
+  try{saved=JSON.parse(localStorage.getItem(KEY)||'{}');}catch(e){}
+  els.forEach(function(el){var v=saved[el.getAttribute('data-eid')];if(v!=null)el.innerHTML=v;});
+  var editing=false;
+  var tgl=document.getElementById('editToggle');
+  var rst=document.getElementById('editReset');
+  function save(){var m={};els.forEach(function(el){m[el.getAttribute('data-eid')]=el.innerHTML;});localStorage.setItem(KEY,JSON.stringify(m));}
+  function setMode(on){
+    editing=on;
+    document.body.classList.toggle('editable-on',on);
+    els.forEach(function(el){el.contentEditable=on?'true':'false';});
+    tgl.classList.toggle('on',on);
+    tgl.textContent=on?'✓ 편집 완료':'✏️ 코멘트 편집';
+    rst.style.display=on?'':'none';
+  }
+  tgl.addEventListener('click',function(){var willEdit=!editing;setMode(willEdit);if(!willEdit)save();});
+  rst.addEventListener('click',function(){if(confirm('편집한 코멘트를 원래대로 되돌릴까요?')){localStorage.removeItem(KEY);location.reload();}});
+  document.addEventListener('input',function(e){if(editing&&e.target&&e.target.closest&&e.target.closest('.ins,.dir'))save();});
+})();
 </script>
 </body>
 </html>
